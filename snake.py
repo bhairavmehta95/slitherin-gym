@@ -2,14 +2,15 @@ from pygame.locals import *
 from random import randint
 import pygame
 import time
+from copy import deepcopy
  
-sprite_size = 22
+SPRITE_SIZE = 22
 
 class Apple:
     x = 0
     y = 0
-    global sprite_size
-    step = sprite_size
+    global SPRITE_SIZE
+    step = SPRITE_SIZE
  
     def __init__(self,x,y):
         self.x = x * self.step
@@ -20,12 +21,12 @@ class Apple:
 
 
 class Wall:
-    global sprite_size
+    global SPRITE_SIZE
     
     def __init__(self, h, w):
         self.h = h
         self.w = w
-        self.step = sprite_size
+        self.step = SPRITE_SIZE
 
 
     def draw(self, surface, image):
@@ -40,28 +41,27 @@ class Wall:
 
  
 class Player:
-    x = [22]
-    y = [22]
-    global sprite_size
-    step = sprite_size
+    global SPRITE_SIZE
+    step = SPRITE_SIZE
     direction = 0
     length = 3
  
     updateCountMax = 2
     updateCount = 0
  
-    def __init__(self, length):
+    def __init__(self, length, x, y):
        self.length = length
+       self.x = [x]
+       self.y = [y]
        for i in range(0,2000):
-           self.x.append(-100)
-           self.y.append(-100)
+           self.x.append(-10)
+           self.y.append(-10)
  
        # initial positions, no collision.
-       self.x[1] = 1*sprite_size
-       self.x[2] = 2*sprite_size
+       self.x[1] = 1*SPRITE_SIZE
+       self.x[2] = 2*SPRITE_SIZE
  
     def update(self):
- 
         self.updateCount = self.updateCount + 1
         if self.updateCount > self.updateCountMax:
  
@@ -82,7 +82,6 @@ class Player:
  
             self.updateCount = 0
  
- 
     def moveRight(self):
         self.direction = 0
  
@@ -97,7 +96,7 @@ class Player:
  
     def draw(self, surface, image):
         for i in range(0,self.length):
-            surface.blit(image,(self.x[i],self.y[i])) 
+            surface.blit(image, (self.x[i],self.y[i])) 
  
 class Game:
     def isCollision(self,x1,y1,x2,y2,bsize):
@@ -107,32 +106,49 @@ class Game:
         return False
  
 class App:
-    windowWidth = 800
-    windowHeight = 600
+    windowWidth = 616
+    windowHeight = 616
     player = 0
     apple = 0
-    global sprite_size
+    global SPRITE_SIZE
  
-    def __init__(self):
+    def __init__(self, num_players=2):
         self._running = True
         self._display_surf = None
         self._image_surf = None
         self._apple_surf = None
         self.game = Game()
-        self.player = Player(3) 
+        self.players = []
+
+        for p in range(num_players):
+            if p == 0:
+                x = 22
+                y = 22
+            else:
+                x = 44
+                y = 44
+            
+            player = Player(3, x, y)
+            self.players.append(player)
+
         self.apple = Apple(5,5)
 
         self.wall = Wall(self.windowHeight, self.windowWidth)
 
-        self.sprite_size = sprite_size
+        self.sprite_size = SPRITE_SIZE
  
     def on_init(self):
         pygame.init()
         self._display_surf = pygame.display.set_mode((self.windowWidth,self.windowHeight), pygame.HWSURFACE)
 
         self._running = True
-        self._image_surf = pygame.Surface([self.sprite_size - 4, self.sprite_size - 4])
-        self._image_surf.fill((0, 255, 0))
+
+        self._player_surfs = []
+        for p in self.players:
+            image_surf = pygame.Surface([self.sprite_size - 4, self.sprite_size - 4])
+            image_surf.fill((0, 255, 0))
+
+            self._player_surfs.append(image_surf)
 
         self._apple_surf = pygame.Surface([self.sprite_size - 4, self.sprite_size - 4])
         self._apple_surf.fill((255, 0, 0))
@@ -145,36 +161,40 @@ class App:
             self._running = False
  
     def on_loop(self):
-        self.player.update()
- 
-        # does snake eat apple?
-        for i in range(0,self.player.length):
-            if self.game.isCollision(self.apple.x,self.apple.y,self.player.x[i], self.player.y[i], 20):
-                self.apple.x = randint(2,9) * sprite_size
-                self.apple.y = randint(2,9) * sprite_size
-                self.player.length = self.player.length + 1
- 
- 
-        # does snake collide with itself?
-        for i in range(2, self.player.length):
-            if self.game.isCollision(self.player.x[0], self.player.y[0], self.player.x[i], self.player.y[i], 20):
-                print("Collision")
-                exit(0)
+        for p in self.players:
+            p.update()
+     
+            # does snake eat apple?
 
-        if self.player.x[0] < self.sprite_size or self.player.y[0] < self.sprite_size:
-            print("collision")
-            exit(1)
+            for i in range(0, p.length):
+                if self.game.isCollision(self.apple.x, self.apple.y, p.x[i], p.y[i], 20):
+                    self.apple.x = randint(2,9) * SPRITE_SIZE
+                    self.apple.y = randint(2,9) * SPRITE_SIZE
+                    p.length = p.length + 1
+     
+     
+            # does snake collide with itself?
+            for i in range(2, p.length):
+                if self.game.isCollision(p.x[0], p.y[0], p.x[i], p.y[i], 20):
+                    print("Collision")
+                    exit(0)
 
-        if self.player.x[0] > self.windowWidth - self.sprite_size or self.player.y[0] > self.windowHeight - self.sprite_size:
-            print("{}: {}:  Collision".format(self.player.x[0], self.player.y[0]))
-            exit(1)
+            if p.x[0] < self.sprite_size or p.y[0] < self.sprite_size:
+                print("collision")
+                exit(1)
+
+            if p.x[0] > self.windowWidth - self.sprite_size or p.y[0] > self.windowHeight - self.sprite_size:
+                print("{}: {}:  Collision".format(p.x[0], p.y[0]))
+                exit(1)
  
  
     def on_render(self):
         self._display_surf.fill((0,0,0))
-        self.player.draw(self._display_surf, self._image_surf)
         self.apple.draw(self._display_surf, self._apple_surf)
         self.wall.draw(self._display_surf, self._wall_surf)
+
+        for i, p in enumerate(self.players):
+            p.draw(self._display_surf, self._player_surfs[i])
 
         pygame.display.flip()
  
@@ -190,16 +210,20 @@ class App:
             keys = pygame.key.get_pressed() 
  
             if (keys[K_RIGHT]):
-                self.player.moveRight()
+                for p in self.players:
+                    p.moveRight()
  
             if (keys[K_LEFT]):
-                self.player.moveLeft()
+                for p in self.players:
+                    p.moveLeft()
  
             if (keys[K_UP]):
-                self.player.moveUp()
+                for p in self.players:
+                    p.moveUp()
  
             if (keys[K_DOWN]):
-                self.player.moveDown()
+                for p in self.players:
+                    p.moveDown()
  
             if (keys[K_ESCAPE]):
                 self._running = False
