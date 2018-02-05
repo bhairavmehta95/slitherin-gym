@@ -111,10 +111,11 @@ class Player:
             surface.blit(image, (self.x[i],self.y[i])) 
  
 class Game:
-    def isCollision(self,x1,y1,x2,y2,bsize):
-        if x1 >= x2 and x1 <= x2 + bsize:
-            if y1 >= y2 and y1 <= y2 + bsize:
+    def isCollision(self, x1, y1, x2, y2, block_size):
+        if x1 >= x2 and x1 <= x2 + block_size:
+            if y1 >= y2 and y1 <= y2 + block_size:
                 return True
+
         return False
  
 class App:
@@ -131,6 +132,7 @@ class App:
         self._apple_surf = None
         self.game = Game()
         self.players = []
+        self.num_players = num_players
 
         for p in range(num_players):
             if p == 0:
@@ -147,6 +149,8 @@ class App:
                 player.direction = 1
 
             self.players.append(player)
+
+        self.killed = [False] * num_players
 
         self.apple = Apple(5,5)
 
@@ -180,38 +184,53 @@ class App:
     def on_loop(self):
         for idx, p in enumerate(self.players):
             p.update()
-     
-            # does snake eat apple?
 
+            for other_player_idx in range(idx + 1, len(self.players)):
+                other_player = self.players[other_player_idx]
+                for idx_player_len in range(0, other_player.length):
+                    if self.game.isCollision(p.x[0], p.y[0], other_player.x[idx_player_len], other_player.y[idx_player_len], 20):
+                        self.killed[idx] = True
+                        self.killed[other_player_idx] = True
+
+            # does snake eat apple?
             for i in range(0, p.length):
                 if self.game.isCollision(self.apple.x, self.apple.y, p.x[i], p.y[i], 20):
                     self.apple.x = randint(2,9) * SPRITE_SIZE
                     self.apple.y = randint(2,9) * SPRITE_SIZE
                     p.length = p.length + 1
      
-     
             # does snake collide with itself?
             for i in range(2, p.length):
                 if self.game.isCollision(p.x[0], p.y[0], p.x[i], p.y[i], 20):
-                    print("Collision")
-                    exit(0)
+                    self.killed[idx] = True
 
             # going off the edge
             if p.x[0] < self.sprite_size or p.y[0] < self.sprite_size:
-                print("collision")
-                exit(1)
+                self.killed[idx] = True
 
             if p.x[0] > self.windowWidth - self.sprite_size or p.y[0] > self.windowHeight - self.sprite_size:
-                print("{}: {}:  Collision".format(p.x[0], p.y[0]))
-                exit(1)
+                self.killed[idx] = True
+        
+        # TODO: Handle deaths
+        deaths = 0
+        idx = 0
+
+        while idx < self.num_players:
+            if deaths == self.num_players:
+                break
+
+            if self.killed[idx]:
+                del self.killed[idx]
+                del self.players[idx]
+                deaths += 1
+            else:
+                idx += 1
+
+        self.num_players -= deaths
+        if self.num_players == 0:
+            exit()
 
 
-            for other_player_idx in range(idx + 1, len(self.players)):
-                other_player = self.players[other_player_idx]
-                for idx_player_len in range(0, other_player.length):
-                    if self.game.isCollision(p.x[0], p.y[0], other_player.x[idx_player_len], other_player.y[idx_player_len], 20):
-                        print("Collision with snakes: {} {}".format(idx, other_player_idx))
-                        exit(1)
  
         
     def on_render(self):
