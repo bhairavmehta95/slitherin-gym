@@ -83,15 +83,27 @@ class Player:
             self.updateCount = 0
  
     def moveRight(self):
+        if self.direction == 1:
+            return
+
         self.direction = 0
  
     def moveLeft(self):
+        if self.direction == 0:
+            return
+
         self.direction = 1
  
     def moveUp(self):
+        if self.direction == 3:
+            return
+
         self.direction = 2
  
     def moveDown(self):
+        if self.direction == 2:
+            return
+
         self.direction = 3 
  
     def draw(self, surface, image):
@@ -122,13 +134,18 @@ class App:
 
         for p in range(num_players):
             if p == 0:
-                x = 22
-                y = 22
-            else:
-                x = 44
-                y = 44
+                x = 22 * (p + 1)
+                y = 22 * (p + 1)
+
+            if p == 1:
+                x = 22 * (p + 10)
+                y = 22 * (1)
             
             player = Player(3, x, y)
+
+            if p == 1:
+                player.direction = 1
+
             self.players.append(player)
 
         self.apple = Apple(5,5)
@@ -161,7 +178,7 @@ class App:
             self._running = False
  
     def on_loop(self):
-        for p in self.players:
+        for idx, p in enumerate(self.players):
             p.update()
      
             # does snake eat apple?
@@ -179,6 +196,7 @@ class App:
                     print("Collision")
                     exit(0)
 
+            # going off the edge
             if p.x[0] < self.sprite_size or p.y[0] < self.sprite_size:
                 print("collision")
                 exit(1)
@@ -186,8 +204,16 @@ class App:
             if p.x[0] > self.windowWidth - self.sprite_size or p.y[0] > self.windowHeight - self.sprite_size:
                 print("{}: {}:  Collision".format(p.x[0], p.y[0]))
                 exit(1)
+
+
+            for other_player_idx in range(idx + 1, len(self.players)):
+                other_player = self.players[other_player_idx]
+                for idx_player_len in range(0, other_player.length):
+                    if self.game.isCollision(p.x[0], p.y[0], other_player.x[idx_player_len], other_player.y[idx_player_len], 20):
+                        print("Collision with snakes: {} {}".format(idx, other_player_idx))
+                        exit(1)
  
- 
+        
     def on_render(self):
         self._display_surf.fill((0,0,0))
         self.apple.draw(self._display_surf, self._apple_surf)
