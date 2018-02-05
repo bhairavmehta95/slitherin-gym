@@ -6,9 +6,7 @@ from copy import deepcopy
  
 SPRITE_SIZE = 22
 
-class Apple:
-    x = 0
-    y = 0
+class Fruit:
     global SPRITE_SIZE
     step = SPRITE_SIZE
  
@@ -38,7 +36,6 @@ class Wall:
             surface.blit(image,(i, 0))
             surface.blit(image,(i, self.h - self.step))
 
-
  
 class Player:
     global SPRITE_SIZE
@@ -54,8 +51,8 @@ class Player:
        self.x = [x]
        self.y = [y]
        for i in range(0,2000):
-           self.x.append(-10)
-           self.y.append(-10)
+           self.x.append(-1)
+           self.y.append(-1)
  
        # initial positions, no collision.
        self.x[1] = 1*SPRITE_SIZE
@@ -125,13 +122,14 @@ class App:
     apple = 0
     global SPRITE_SIZE
  
-    def __init__(self, num_players=2):
+    def __init__(self, num_players=2, num_fruits=2):
         self._running = True
         self._display_surf = None
         self._image_surf = None
         self._apple_surf = None
         self.game = Game()
         self.players = []
+        self.fruits = []
         self.num_players = num_players
 
         for p in range(num_players):
@@ -152,7 +150,8 @@ class App:
 
         self.killed = [False] * num_players
 
-        self.apple = Apple(5,5)
+        for f in range(num_fruits):
+            self.fruits.append(Fruit(randint(1, 12), randint(1, 12)))
 
         self.wall = Wall(self.windowHeight, self.windowWidth)
 
@@ -171,8 +170,9 @@ class App:
 
             self._player_surfs.append(image_surf)
 
-        self._apple_surf = pygame.Surface([self.sprite_size - 4, self.sprite_size - 4])
-        self._apple_surf.fill((255, 0, 0))
+
+        self._fruit_surf = pygame.Surface([self.sprite_size - 4, self.sprite_size - 4])
+        self._fruit_surf.fill((255, 0, 0))
 
         self._wall_surf = pygame.Surface([self.sprite_size - 4, self.sprite_size - 4])
         self._wall_surf.fill((255, 0, 255))
@@ -194,14 +194,15 @@ class App:
 
             # does snake eat apple?
             for i in range(0, p.length):
-                if self.game.isCollision(self.apple.x, self.apple.y, p.x[i], p.y[i], 20):
-                    self.apple.x = randint(2,9) * SPRITE_SIZE
-                    self.apple.y = randint(2,9) * SPRITE_SIZE
-                    p.length = p.length + 1
+                for f in self.fruits:
+                    if self.game.isCollision(f.x, f.y, p.x[i], p.y[i], 19):
+                        f.x = randint(2,9) * SPRITE_SIZE
+                        f.y = randint(2,9) * SPRITE_SIZE
+                        p.length = p.length + 1
      
             # does snake collide with itself?
             for i in range(2, p.length):
-                if self.game.isCollision(p.x[0], p.y[0], p.x[i], p.y[i], 20):
+                if self.game.isCollision(p.x[0], p.y[0], p.x[i], p.y[i], 19):
                     self.killed[idx] = True
 
             # going off the edge
@@ -211,35 +212,30 @@ class App:
             if p.x[0] > self.windowWidth - self.sprite_size or p.y[0] > self.windowHeight - self.sprite_size:
                 self.killed[idx] = True
         
-        # TODO: Handle deaths
-        deaths = 0
-        idx = 0
+        players_new = []
 
-        while idx < self.num_players:
-            if deaths == self.num_players:
-                break
+        for idx, p in enumerate(self.players):
+            if not self.killed[idx]:
+                players_new.append(self.players[idx])
 
-            if self.killed[idx]:
-                del self.killed[idx]
-                del self.players[idx]
-                deaths += 1
-            else:
-                idx += 1
+        self.players = deepcopy(players_new)
+        self.num_players = len(self.players)
+        self.killed = [False] * self.num_players
 
-        self.num_players -= deaths
         if self.num_players == 0:
             exit()
 
-
- 
         
     def on_render(self):
         self._display_surf.fill((0,0,0))
-        self.apple.draw(self._display_surf, self._apple_surf)
-        self.wall.draw(self._display_surf, self._wall_surf)
+
+        for i, f in enumerate(self.fruits):
+            f.draw(self._display_surf, self._fruit_surf)
 
         for i, p in enumerate(self.players):
             p.draw(self._display_surf, self._player_surfs[i])
+
+        self.wall.draw(self._display_surf, self._wall_surf)
 
         pygame.display.flip()
  
