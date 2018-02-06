@@ -25,7 +25,6 @@ class SnakeEnv(gym.Env):
             self.length = length
 
             self.direction = direction
-            print('Direction: {}'.format(direction))
 
             self.update_count_max = 2
             self.update_count = 0
@@ -38,8 +37,6 @@ class SnakeEnv(gym.Env):
                self.x.append(-1)
                self.y.append(-1)
 
-            print('Direction {} Self Spacing {}'.format(self.direction, self.spacing))
-     
            # initial positions, no collision.
             if self.direction == 0:
                 self.x[1] = x - (1 * self.spacing)
@@ -54,16 +51,18 @@ class SnakeEnv(gym.Env):
                 self.y[2] = y
 
             if self.direction == 2:
+                self.y[1] = y - (1 * self.spacing)
+                self.y[2] = y - (2 * self.spacing)
+                self.x[1] = x
+                self.x[2] = x
+
+            if self.direction == 3:
                 self.y[1] = y + (1 * self.spacing)
                 self.y[2] = y + (2 * self.spacing)
                 self.x[1] = x
                 self.x[2] = x
 
-            if self.direction == 3:
-                self.y[1] = y - (1 * self.spacing)
-                self.y[2] = y - (2 * self.spacing)
-                self.x[1] = x
-                self.x[2] = x
+            print('init', self.x[0:3], self.y[0:3])
 
         def _reset(self, x, y, direction):
             self.length = self.init_length
@@ -76,7 +75,6 @@ class SnakeEnv(gym.Env):
             for i in range(0, 2000): 
                self.x.append(-1)
                self.y.append(-1)
-
 
             # initial positions, no collision.
             if self.direction == 0:
@@ -103,28 +101,32 @@ class SnakeEnv(gym.Env):
                 self.x[1] = x
                 self.x[2] = x
 
-            print(self.x[0:3], self.y[0:3])
+            print('reset', self.x[0:3], self.y[0:3])
 
 
         def _act(self, action):
             if action == 0:
                 if self.direction == 1:
                     return
+
                 self.direction = 0
 
             elif action == 1:
                 if self.direction == 0:
                     return
+
                 self.direction = 1
 
             elif action == 2:
                 if self.direction == 3:
                     return
+
                 self.direction = 2
 
             elif action == 3:
                 if self.direction == 2:
                     return
+
                 self.direction = 3
 
             else:
@@ -137,7 +139,7 @@ class SnakeEnv(gym.Env):
             if self.update_count > self.update_count_max:
      
                 # update previous positions
-                for i in range(self.length - 1, 0, -1):
+                for i in range(self.length, 0, -1):
                     self.x[i] = self.x[i-1]
                     self.y[i] = self.y[i-1]
      
@@ -150,7 +152,8 @@ class SnakeEnv(gym.Env):
                     self.y[0] = self.y[0] - self.step
                 if self.direction == 3:
                     self.y[0] = self.y[0] + self.step
-     
+                
+                print(self.y[0:3])
                 self.update_count = 0
      
 
@@ -159,7 +162,7 @@ class SnakeEnv(gym.Env):
                 surface.blit(image, (self.x[i], self.y[i]))
 
 
-    def __init__(self, num_players=2, num_fruits=2, window_dimension=616, spacing=22, init_length=3):
+    def __init__(self, num_players=1, num_fruits=2, window_dimension=616, spacing=22, init_length=3):
         self._running = True
 
         self._display_surf = None
@@ -202,7 +205,6 @@ class SnakeEnv(gym.Env):
 
         for i, a in enumerate(actions):
             if self.killed[i]: continue
-
             self.players[i]._act(a)
             self.players[i]._update()        
 
@@ -218,10 +220,11 @@ class SnakeEnv(gym.Env):
                         rewards[i] = 1.0
 
             # does snake collide with itself?
-            for len_idx in range(2, p.length):
+            for len_idx in range(1, p.length):
                 if self._check_collision(p.x[0], p.y[0], p.x[len_idx], p.y[len_idx]):
                     killed_on_step[i] = True
-                    print("collide w self")
+                    print(p.x[len_idx], p.y[len_idx])
+                    print(len_idx, p.x[0:3], p.y[0:3])
 
             # does snake hit a wall?
             if p.x[0] < self.spacing or p.y[0] < self.spacing:
@@ -279,7 +282,7 @@ class SnakeEnv(gym.Env):
 
             x = np.random.randint(1, self.max_spawn_idx - 1) * self.spacing
             y = np.random.randint(1, self.max_spawn_idx - 1) * self.spacing
-            direction = np.random.randint(0, 4)
+            direction = np.random.randint(0, 1) # TODO: Fix vertical spawning
 
             p._reset(x, y, direction)
 
@@ -294,12 +297,11 @@ class SnakeEnv(gym.Env):
 
 
     def _check_collision(self, x1, y1, x2, y2):
-        bounding_box = self.spacing - 10
-
+        bounding_box = 20
 
         if x1 >= x2 and x1 <= x2 + bounding_box:
             if y1 >= y2 and y1 <= y2 + bounding_box:
-                print(x1, x2, y1, y2)
+                print('inside collision', x1, x2, y1, y2)
                 return True
 
         return False
@@ -308,7 +310,7 @@ class SnakeEnv(gym.Env):
     def _create_player(self, i, init_length):
         x = np.random.randint(init_length, self.max_spawn_idx - init_length) * self.spacing
         y = np.random.randint(init_length, self.max_spawn_idx - init_length) * self.spacing
-        direction = np.random.randint(0, 4)
+        direction = np.random.randint(0, 1) # TODO: Fix Vertical spawning
         
         player = self.Player(x, y, self.spacing, direction=direction, length=init_length)
         player.color_i = i % len(self.PLAYER_COLORS)
@@ -380,40 +382,3 @@ class SnakeEnv(gym.Env):
 
         self._wall_surf = pygame.Surface([self.spacing - 4, self.spacing - 4])
         self._wall_surf.fill((255, 255, 255))
-
-
-if __name__ == '__main__':
-    e = SnakeEnv() 
-    e.render()  
-
-    while True:
-        e._pygame_init()
-        actions = None
-        while actions is None:
-            pygame.event.pump()
-            keys = pygame.key.get_pressed() 
-
-            if (keys[K_RIGHT]):
-                actions = [0, 0]
-
-            if (keys[K_LEFT]):
-                actions = [1, 1]
-
-            if (keys[K_UP]):
-                actions = [2, 2]
-
-            if (keys[K_DOWN]):
-                actions = [3, 3]
- 
-        # actions = [np.random.randint(0,4)]
-        
-        e.render()
-        
-        obs, r, done, _ = e.step(actions)
-        print(r)
-
-        if done:
-            e.reset()
-        
-        actions = None
-        time.sleep (25.0 / 1000.0);

@@ -244,8 +244,10 @@ class App:
 
         pygame.display.flip()
  
+ 
     def on_cleanup(self):
         pygame.quit()
+ 
  
     def on_execute(self):
         if self.on_init() == False:
