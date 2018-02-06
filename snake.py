@@ -9,7 +9,8 @@ SPRITE_SIZE = 22
 PLAYER_COLORS = [
     (0, 255, 0),
     (0, 0, 255),
-    (255, 0, 255)
+    (255, 255, 0),
+    (255, 0, 255),
 ]
 
 class Fruit:
@@ -114,12 +115,7 @@ class Player:
             surface.blit(image, (self.x[i], self.y[i])) 
   
 class App:
-    window_dimension = 616
-    player = 0
-    apple = 0
-    global SPRITE_SIZE
- 
-    def __init__(self, num_players=3, num_fruits=2):
+    def __init__(self, num_players=3, num_fruits=2, window_dimension=616, sprite_size=22):
         self._running = True
         self._display_surf = None
         self._image_surf = None
@@ -127,6 +123,10 @@ class App:
         self.players = []
         self.fruits = []
         self.num_players = num_players
+        self.window_dimension = 616 
+        self.sprite_size = 22
+        
+        global SPRITE_SIZE
 
         for p in range(num_players):
             if p == 0:
@@ -201,8 +201,8 @@ class App:
             for i in range(0, p.length):
                 for f in self.fruits:
                     if self.collided(f.x, f.y, p.x[i], p.y[i], 19):
-                        f.x = randint(2,9) * SPRITE_SIZE
-                        f.y = randint(2,9) * SPRITE_SIZE
+                        f.x = randint(2, self.window_dimension / self.sprite_size - 2) * SPRITE_SIZE
+                        f.y = randint(2, self.window_dimension / self.sprite_size - 2) * SPRITE_SIZE
                         p.length = p.length + 1
      
             # does snake collide with itself?
@@ -223,7 +223,6 @@ class App:
             if not self.killed[idx]:
                 players_new.append(self.players[idx])
 
-        print(self.killed)
         self.players = deepcopy(players_new)
         self.num_players = len(self.players)
         self.killed = [False] * self.num_players
@@ -278,7 +277,7 @@ class App:
             self.on_loop()
             self.on_render()
  
-            # time.sleep (50.0 / 1000.0);
+            time.sleep (25.0 / 1000.0);
 
         self.on_cleanup()
  
