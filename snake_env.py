@@ -189,7 +189,7 @@ class SnakeEnv(gym.Env):
             self.fruits.append(self._generate_goal())
 
 
-        self.observation_space = spaces.Box(low=-1, high=3, shape=(self.window_dimension // self.spacing, self.window_dimension // self.spacing))
+        self.observation_space = spaces.Box(low=-1, high=3, shape=(self.num_players, self.window_dimension // self.spacing, self.window_dimension // self.spacing))
 
         self.action_space = spaces.Tuple(
             [spaces.Discrete(4) for i in range(self.num_players)]
