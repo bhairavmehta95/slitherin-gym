@@ -1,6 +1,7 @@
 from pygame.locals import *
 import pygame
 from snake_env import SnakeEnv
+import time
 
 e = SnakeEnv() 
 e.render()  
@@ -32,4 +33,5 @@ while True:
         e.reset()
     
     actions = None
+    time.sleep(25.0 / 1000.0)
     

@@ -189,6 +189,14 @@ class SnakeEnv(gym.Env):
             self.fruits.append(self._generate_goal())
 
 
+        self.observation_space = spaces.Box(low=-1, high=3, shape=(self.window_dimension // self.spacing, self.window_dimension // self.spacing))
+
+        self.action_space = spaces.Tuple(
+            [spaces.Discrete(4) for i in range(self.num_players)]
+        )
+
+
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -330,26 +338,26 @@ class SnakeEnv(gym.Env):
 
 
     def _generate_obs(self, agent):
-        obs = np.zeros((self.window_dimension, self.window_dimension))
+        obs = np.zeros((self.window_dimension // self.spacing, self.window_dimension // self.spacing))
 
-        if self.killed[agent]: return -1 * np.ones((self.window_dimension, self.window_dimension))
+        if self.killed[agent]: return -1 * np.ones((self.window_dimension // self.spacing, self.window_dimension // self.spacing))
 
         for i in range(self.players[agent].length):
-            obs[self.players[agent].x[i]][self.players[agent].y[i]] = 1
+            obs[self.players[agent].x[i] // self.spacing][self.players[agent].y[i] // self.spacing] = 1
 
         for i, p in enumerate(self.players):
             if self.killed[i]: continue 
             for j in range(p.length):
-                obs[p.x[j]][p.y[j]] = 2
+                obs[p.x[j] // self.spacing ][p.y[j] // self.spacing ] = 2
 
         for i, f in enumerate(self.fruits):
-            obs[f[0]][f[1]] = 3
+            obs[f[0] // self.spacing ][f[1] // self.spacing ] = 3
 
         obs[:][0] = -1
-        obs[:][self.window_dimension - 1] = -1
+        obs[:][self.window_dimension // self.spacing - 1] = -1
 
         obs[0][:] = -1
-        obs[self.window_dimension - 1][:] = -1
+        obs[self.window_dimension // self.spacing - 1][:] = -1
 
         return deepcopy(obs)
 
