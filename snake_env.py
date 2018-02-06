@@ -62,7 +62,6 @@ class SnakeEnv(gym.Env):
                 self.x[1] = x
                 self.x[2] = x
 
-            print('init', self.x[0:3], self.y[0:3])
 
         def _reset(self, x, y, direction):
             self.length = self.init_length
@@ -100,8 +99,6 @@ class SnakeEnv(gym.Env):
                 self.y[2] = y + (2 * self.spacing)
                 self.x[1] = x
                 self.x[2] = x
-
-            print('reset', self.x[0:3], self.y[0:3])
 
 
         def _act(self, action):
@@ -153,7 +150,6 @@ class SnakeEnv(gym.Env):
                 if self.direction == 3:
                     self.y[0] = self.y[0] + self.step
                 
-                print(self.y[0:3])
                 self.update_count = 0
      
 
@@ -223,8 +219,6 @@ class SnakeEnv(gym.Env):
             for len_idx in range(1, p.length):
                 if self._check_collision(p.x[0], p.y[0], p.x[len_idx], p.y[len_idx]):
                     killed_on_step[i] = True
-                    print(p.x[len_idx], p.y[len_idx])
-                    print(len_idx, p.x[0:3], p.y[0:3])
 
             # does snake hit a wall?
             if p.x[0] < self.spacing or p.y[0] < self.spacing:
@@ -256,7 +250,6 @@ class SnakeEnv(gym.Env):
             ob = self._generate_obs(i)
             new_obs.append(ob)
 
-        # print(self.active_players)
         return deepcopy(new_obs), deepcopy(rewards), done, {}
 
 
@@ -301,7 +294,6 @@ class SnakeEnv(gym.Env):
 
         if x1 >= x2 and x1 <= x2 + bounding_box:
             if y1 >= y2 and y1 <= y2 + bounding_box:
-                print('inside collision', x1, x2, y1, y2)
                 return True
 
         return False
