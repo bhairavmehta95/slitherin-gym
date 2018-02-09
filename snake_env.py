@@ -33,7 +33,7 @@ class SnakeEnv(gym.Env):
 
             self.x = [x]
             self.y = [y]
-            for i in range(0, 2000): 
+            for i in range(0, 2000):
                self.x.append(-1)
                self.y.append(-1)
 
@@ -71,7 +71,7 @@ class SnakeEnv(gym.Env):
 
             self.x = [x]
             self.y = [y]
-            for i in range(0, 2000): 
+            for i in range(0, 2000):
                self.x.append(-1)
                self.y.append(-1)
 
@@ -134,12 +134,12 @@ class SnakeEnv(gym.Env):
         def _update(self):
             self.update_count = self.update_count + 1
             if self.update_count > self.update_count_max:
-     
+
                 # update previous positions
                 for i in range(self.length, 0, -1):
                     self.x[i] = self.x[i-1]
                     self.y[i] = self.y[i-1]
-     
+
                 # update position of head of snake
                 if self.direction == 0:
                     self.x[0] = self.x[0] + self.step
@@ -149,16 +149,16 @@ class SnakeEnv(gym.Env):
                     self.y[0] = self.y[0] - self.step
                 if self.direction == 3:
                     self.y[0] = self.y[0] + self.step
-                
+
                 self.update_count = 0
-     
+
 
         def _draw(self, surface, image):
             for i in range(0,self.length):
                 surface.blit(image, (self.x[i], self.y[i]))
 
 
-    def __init__(self, num_players=1, num_fruits=2, window_dimension=616, spacing=22, init_length=3):
+    def __init__(self, num_players=2, num_fruits=3, window_dimension=616, spacing=22, init_length=3):
         self._running = True
 
         self._display_surf = None
@@ -172,14 +172,14 @@ class SnakeEnv(gym.Env):
         self.num_fruits = num_fruits
         self.init_length = init_length
 
-        self.window_dimension = window_dimension 
+        self.window_dimension = window_dimension
         self.spacing = spacing
 
         assert self.window_dimension % self.spacing == 0, "window_dimension needs to be a multiple of spacing"
 
         self.max_spawn_idx = self.window_dimension / self.spacing - self.init_length
         for i in range(self.num_players):
-            player = self._create_player(i, self.init_length) 
+            player = self._create_player(i, self.init_length)
             self.players.append(player)
 
         self.killed = [False] * self.num_players
@@ -212,16 +212,16 @@ class SnakeEnv(gym.Env):
         for i, a in enumerate(actions):
             if self.killed[i]: continue
             self.players[i]._act(a)
-            self.players[i]._update()        
+            self.players[i]._update()
 
         for i, p in enumerate(self.players):
             # Did a snake eat an apple?
-            if self.killed[i]: continue 
+            if self.killed[i]: continue
 
             for len_idx in range(0, p.length):
                 for f_i, f in enumerate(self.fruits):
                     if self._check_collision(f[0], f[1], p.x[len_idx], p.y[len_idx]):
-                        self.fruits[f_i] = self._generate_goal() 
+                        self.fruits[f_i] = self._generate_goal()
                         p.length = p.length + 1
                         rewards[i] = 1.0
 
@@ -247,7 +247,7 @@ class SnakeEnv(gym.Env):
                         killed_on_step[agent_i] = True
 
         for i, k in enumerate(killed_on_step):
-            if k: 
+            if k:
                 rewards[i] = -1.0
                 self.active_players -= 1
                 self.killed[i] = True
@@ -293,7 +293,7 @@ class SnakeEnv(gym.Env):
             self.fruits[f] = self._generate_goal()
 
         self.active_players = self.num_players
-    
+
 
     def close(self):
         pygame.quit()
@@ -313,7 +313,7 @@ class SnakeEnv(gym.Env):
         x = np.random.randint(init_length, self.max_spawn_idx - init_length) * self.spacing
         y = np.random.randint(init_length, self.max_spawn_idx - init_length) * self.spacing
         direction = np.random.randint(0, 1) # TODO: Fix Vertical spawning
-        
+
         player = self.Player(x, y, self.spacing, direction=direction, length=init_length)
         player.color_i = i % len(self.PLAYER_COLORS)
 
@@ -333,7 +333,7 @@ class SnakeEnv(gym.Env):
 
 
     def _generate_goal(self):
-        x = np.random.randint(1, self.max_spawn_idx - 1) * self.spacing 
+        x = np.random.randint(1, self.max_spawn_idx - 1) * self.spacing
         y = np.random.randint(1, self.max_spawn_idx - 1) * self.spacing
 
         return [x, y]
@@ -348,7 +348,7 @@ class SnakeEnv(gym.Env):
             obs[self.players[agent].x[i] // self.spacing][self.players[agent].y[i] // self.spacing] = 1
 
         for i, p in enumerate(self.players):
-            if self.killed[i]: continue 
+            if self.killed[i]: continue
             for j in range(p.length):
                 obs[p.x[j] // self.spacing ][p.y[j] // self.spacing ] = 2
 
@@ -365,7 +365,7 @@ class SnakeEnv(gym.Env):
 
 
     def _pygame_draw(self, surface, image, pos):
-        surface.blit(image, (pos[0], pos[1])) 
+        surface.blit(image, (pos[0], pos[1]))
 
 
     def _pygame_init(self):
