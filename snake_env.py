@@ -197,6 +197,7 @@ class SnakeEnv(gym.Env):
 
         self.reward_range = (-1.0, 1.0)
 
+        self._pygame_init()
 
 
     def seed(self, seed=None):

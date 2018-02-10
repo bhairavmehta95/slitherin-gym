@@ -1,37 +1,52 @@
+import numpy as np
 from pygame.locals import *
 import pygame
+
 from snake_env import SnakeEnv
 import time
 
-e = SnakeEnv() 
-e.render()  
+
+num_players = 3
+e = SnakeEnv(num_players=num_players, num_fruits=3)
+e.render()
 
 while True:
-    e._pygame_init()
     actions = None
-    while actions is None:
+    index = 0
+
+    while True:
         pygame.event.pump()
-        keys = pygame.key.get_pressed() 
+        keys = pygame.key.get_pressed()
+        actions = np.ones(num_players) * -1
+
+        if np.any(keys[49:58]):
+            index = keys[49:58].index(1)
+            if index > num_players:
+                index = 0
 
         if (keys[K_RIGHT]):
-            actions = [0]
+            actions[index] = 0
+            break  
 
         if (keys[K_LEFT]):
-            actions = [1]
+            actions[index] = 1
+            break  
 
         if (keys[K_UP]):
-            actions = [2]
+            actions[index] = 2
+            break  
 
         if (keys[K_DOWN]):
-            actions = [3]
-    
+            actions[index] = 3
+            break  
+
     e.render()
-    
+
     obs, r, done, _ = e.step(actions)
 
     if done:
         e.reset()
-    
+
     actions = None
     time.sleep(25.0 / 1000.0)
-    
+
