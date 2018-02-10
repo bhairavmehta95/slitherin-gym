@@ -12,14 +12,14 @@ from copy import deepcopy
 
 
 class SnakeEnv(gym.Env):
-    PLAYER_COLORS = [
+    AGENT_COLORS = [
         (0, 255, 0),
         (0, 0, 255),
         (255, 255, 0),
         (255, 0, 255),
     ]
 
-    class Player:
+    class Agent:
         def __init__(self, x, y, spacing, length=3, direction=0):
             self.init_length = length
             self.length = length
@@ -158,17 +158,17 @@ class SnakeEnv(gym.Env):
                 surface.blit(image, (self.x[i], self.y[i]))
 
 
-    def __init__(self, num_players=2, num_fruits=3, window_dimension=616, spacing=22, init_length=3):
+    def __init__(self, num_agents=2, num_fruits=3, window_dimension=616, spacing=22, init_length=3):
         self._running = True
 
         self._display_surf = None
         self._image_surf = None
         self._fruit_surf = None
 
-        self.players = []
+        self.agents = []
         self.fruits = []
-        self.num_players = num_players
-        self.active_players = num_players
+        self.num_agents = num_agents
+        self.active_agents = num_agents
         self.num_fruits = num_fruits
         self.init_length = init_length
 
@@ -178,21 +178,21 @@ class SnakeEnv(gym.Env):
         assert self.window_dimension % self.spacing == 0, "window_dimension needs to be a multiple of spacing"
 
         self.max_spawn_idx = self.window_dimension / self.spacing - self.init_length
-        for i in range(self.num_players):
-            player = self._create_player(i, self.init_length)
-            self.players.append(player)
+        for i in range(self.num_agents):
+            agent = self._create_agent(i, self.init_length)
+            self.agents.append(agent)
 
-        self.killed = [False] * self.num_players
+        self.killed = [False] * self.num_agents
 
         # Initialize goals
         for f in range(num_fruits):
             self.fruits.append(self._generate_goal())
 
 
-        self.observation_space = spaces.Box(low=-1, high=3, shape=(self.num_players,    self.window_dimension // self.spacing, self.window_dimension // self.spacing))
+        self.observation_space = spaces.Box(low=-1, high=3, shape=(self.num_agents,    self.window_dimension // self.spacing, self.window_dimension // self.spacing))
 
         self.action_space = spaces.Tuple(
-            [spaces.Discrete(4) for i in range(self.num_players)]
+            [spaces.Discrete(4) for i in range(self.num_agents)]
         )
 
         self.reward_range = (-1.0, 1.0)
@@ -207,15 +207,15 @@ class SnakeEnv(gym.Env):
 
     def step(self, actions):
         new_obs = []
-        killed_on_step = [False] * self.num_players
-        rewards = [0.0] * self.num_players
+        killed_on_step = [False] * self.num_agents
+        rewards = [0.0] * self.num_agents
 
         for i, a in enumerate(actions):
             if self.killed[i]: continue
-            self.players[i]._act(a)
-            self.players[i]._update()
+            self.agents[i]._act(a)
+            self.agents[i]._update()
 
-        for i, p in enumerate(self.players):
+        for i, p in enumerate(self.agents):
             # Did a snake eat an apple?
             if self.killed[i]: continue
 
@@ -240,24 +240,24 @@ class SnakeEnv(gym.Env):
                 killed_on_step[i] = True
 
             # does snake collide with another agent?
-            for agent_i in range(i + 1, len(self.players)):
-                agent = self.players[agent_i]
-                for i_player_len in range(0, agent.length):
-                    if self._check_collision(p.x[0], p.y[0], agent.x[i_player_len], agent.y[i_player_len]):
+            for agent_i in range(i + 1, len(self.agents)):
+                agent = self.agents[agent_i]
+                for i_agent_len in range(0, agent.length):
+                    if self._check_collision(p.x[0], p.y[0], agent.x[i_agent_len], agent.y[i_agent_len]):
                         killed_on_step[i] = True
                         killed_on_step[agent_i] = True
 
         for i, k in enumerate(killed_on_step):
             if k:
                 rewards[i] = -1.0
-                self.active_players -= 1
+                self.active_agents -= 1
                 self.killed[i] = True
 
         done = False
-        if self.active_players == 0:
+        if self.active_agents == 0:
             done = True
 
-        for i in range(self.num_players):
+        for i in range(self.num_agents):
             ob = self._generate_obs(i)
             new_obs.append(ob)
 
@@ -273,15 +273,15 @@ class SnakeEnv(gym.Env):
         for i, f in enumerate(self.fruits):
             self._pygame_draw(self._display_surf, self._fruit_surf, f)
 
-        for i, p in enumerate(self.players):
+        for i, p in enumerate(self.agents):
             if self.killed[i]: continue
-            p._draw(self._display_surf, self._player_surfs[p.color_i])
+            p._draw(self._display_surf, self._agent_surfs[p.color_i])
 
         pygame.display.flip()
 
 
     def reset(self):
-        for i, p in enumerate(self.players):
+        for i, p in enumerate(self.agents):
             self.killed[i] = False
 
             x = np.random.randint(1, self.max_spawn_idx - 1) * self.spacing
@@ -293,7 +293,7 @@ class SnakeEnv(gym.Env):
         for f in range(self.num_fruits):
             self.fruits[f] = self._generate_goal()
 
-        self.active_players = self.num_players
+        self.active_agents = self.num_agents
 
 
     def close(self):
@@ -310,15 +310,15 @@ class SnakeEnv(gym.Env):
         return False
 
 
-    def _create_player(self, i, init_length):
+    def _create_agent(self, i, init_length):
         x = np.random.randint(init_length, self.max_spawn_idx - init_length) * self.spacing
         y = np.random.randint(init_length, self.max_spawn_idx - init_length) * self.spacing
         direction = np.random.randint(0, 1) # TODO: Fix Vertical spawning
 
-        player = self.Player(x, y, self.spacing, direction=direction, length=init_length)
-        player.color_i = i % len(self.PLAYER_COLORS)
+        agent = self.Agent(x, y, self.spacing, direction=direction, length=init_length)
+        agent.color_i = i % len(self.AGENT_COLORS)
 
-        return deepcopy(player)
+        return deepcopy(agent)
 
 
     def _draw_env(self):
@@ -345,10 +345,10 @@ class SnakeEnv(gym.Env):
 
         if self.killed[agent]: return -1 * np.ones((self.window_dimension // self.spacing, self.window_dimension // self.spacing))
 
-        for i in range(self.players[agent].length):
-            obs[self.players[agent].x[i] // self.spacing][self.players[agent].y[i] // self.spacing] = 1
+        for i in range(self.agents[agent].length):
+            obs[self.agents[agent].x[i] // self.spacing][self.agents[agent].y[i] // self.spacing] = 1
 
-        for i, p in enumerate(self.players):
+        for i, p in enumerate(self.agents):
             if self.killed[i]: continue
             for j in range(p.length):
                 obs[p.x[j] // self.spacing ][p.y[j] // self.spacing ] = 2
@@ -372,13 +372,13 @@ class SnakeEnv(gym.Env):
     def _pygame_init(self):
         pygame.init()
         self._display_surf = pygame.display.set_mode((self.window_dimension, self.window_dimension), pygame.HWSURFACE)
-        self._player_surfs = []
+        self._agent_surfs = []
         self._running = True
 
-        for i, p in enumerate(self.players):
+        for i, p in enumerate(self.agents):
             image_surf = pygame.Surface([self.spacing - 4, self.spacing - 4])
-            image_surf.fill(self.PLAYER_COLORS[i % len(self.PLAYER_COLORS)])
-            self._player_surfs.append(image_surf)
+            image_surf.fill(self.AGENT_COLORS[i % len(self.AGENT_COLORS)])
+            self._agent_surfs.append(image_surf)
 
         self._fruit_surf = pygame.Surface([self.spacing - 4, self.spacing - 4])
         self._fruit_surf.fill((255, 0, 0))

@@ -6,8 +6,8 @@ from snake_env import SnakeEnv
 import time
 
 
-num_players = 3
-e = SnakeEnv(num_players=num_players, num_fruits=3)
+num_agents = 3
+e = SnakeEnv(num_agents=num_agents, num_fruits=3)
 e.render()
 
 while True:
@@ -17,11 +17,11 @@ while True:
     while True:
         pygame.event.pump()
         keys = pygame.key.get_pressed()
-        actions = np.ones(num_players) * -1
+        actions = np.ones(num_agents) * -1
 
         if np.any(keys[49:58]):
             index = keys[49:58].index(1)
-            if index > num_players:
+            if index > num_agents:
                 index = 0
 
         if (keys[K_RIGHT]):
