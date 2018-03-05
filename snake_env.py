@@ -295,7 +295,7 @@ class SnakeEnv(gym.Env):
 
         self.active_agents = self.num_agents
 
-		for i in range(self.num_agents):
+        for i in range(self.num_agents):
             ob = self._generate_obs(i)
             new_obs.append(ob)
 
